@@ -70,10 +70,20 @@
 // attribute vec2 uv;
 
 // TODO#A6: Declare any varyings here.
+varying vec2 vUv;
+varying vec3 vNormal; // normal at the vertex in eye space
+varying vec4 vPosition; // vertex position in eye space
 
 void main() {
     // TODO#A6: Compute gl_Position, as well as any varyings you need in the fragment shader.
-    gl_Position = vec4(1.0); // placeholder
+    // Calculate point in eye space
+    vPosition = modelViewMatrix * vec4(position, 1.0);
+    // Calculate projected point
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+
+    // We have to use the inverse transpose of the modelview matrix for the normal
+    vNormal = normalize((normalMatrix * normal).xyz);
+    vUv = uv;
 }
         </script>
 <!-----------------------------------------------------------------------------
@@ -100,6 +110,9 @@ uniform sampler2D diffuseTexture;
 uniform bool hasTexture;  // false, use diffuseColor; true, use diffuseTexture
 
 // TODO#A6: Declare any varyings here. 
+varying vec2 vUv;
+varying vec3 vNormal; // fragment normal in eye space
+varying vec4 vPosition; // fragment position in eye space
 
 vec3 to_sRGB(vec3 c) { return pow(c, vec3(1.0/2.2)); }
 vec3 from_sRGB(vec3 c) { return pow(c, vec3(2.2)); }
@@ -187,7 +200,40 @@ vec3 ACES_filmic(vec3 x)
 
 void main() {
     // TODO#A6: Implement the shading here.
-    gl_FragColor = vec4(1.0); // placeholder
+    // interpolating normals will change the length of the normal, so renormalize the normal.
+    vec3 N = normalize(vNormal);
+    vec3 V = normalize(-vPosition.xyz);
+
+    vec3 diffuseReflectance = hasTexture ? from_sRGB(texture2D(diffuseTexture, vUv).rgb) : diffuseColor;
+    vec3 finalColor = ambientIntensity * diffuseReflectance;
+
+    for (int i = 0; i < NUM_LIGHTS; i++) {
+        float r = length(lightPositions[i] - vPosition.xyz);
+        vec3 L = normalize(lightPositions[i] - vPosition.xyz);
+        vec3 H = normalize(L + V);
+
+        // calculate diffuse term
+        vec3 Idiff = diffuseReflectance / M_PI * max(dot(N, L), 0.0);
+
+        float F = ufacetF(L, H);
+        float G = ufacetG(N, H, L, V);
+        float D = ufacetD(N, H);
+        float Fr = F * G * D / (4.0 * abs(dot(L, N)) * abs(dot(V, N)));
+        // float Fr = F * G * D / (4 * ((dot(L, N)) / normalize(dot(L, N))) * ((dot(V, N)) / normalize(dot(Vs, N))));
+        // calculate specular term
+        vec3 Ispec = vec3(1.0) * Fr * max(dot(N, L), 0.0);
+
+        finalColor += lightColors[i] * (Idiff + Ispec) / (r*r);
+    }
+
+    // Only shade if facing the light
+    // Color the back faces an identifiable color
+    if (gl_FrontFacing) {
+        gl_FragColor = vec4(to_sRGB(finalColor * exposure), 1.0);
+    } else {
+        gl_FragColor = vec4(170.0/255.0, 160.0/255.0, 0.0, 1.0);
+    }
+
 }
 
         </script>
