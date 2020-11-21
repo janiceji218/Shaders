@@ -82,7 +82,7 @@ varying vec3 vNormal; // normal at the vertex in eye space
 varying vec3 vTangent;
 varying vec3 vTangent2;
 varying vec4 vPosition; // vertex position in eye space
-varying vec3 vNormal2;
+
 void main() {
     // TODO#A6: Compute gl_Position, as well as any varyings you need in the fragment shader.
     // Calculate point in eye space
@@ -93,12 +93,12 @@ void main() {
 
     // We have to use the inverse transpose of the modelview matrix for the normal
     vNormal = normalize((normalMatrix * normal).xyz);
-    vNormal2 = normal;
     // tangent is perpendicular to normal and points towards the increasing u direction of the UV coordinates
-    vTangent = normalize((normalMatrix * tangent).xyz);
-
+    //vTangent = normalize((modelViewMatrix * tangent).xyz);
+    vTangent = tangent;
     // tangent2 completes the basis by being perpendicular to the other two
-    vTangent2 = normalize((normalMatrix * tangent2).xyz);
+    //vTangent2 = normalize((modelViewMatrix * tangent2).xyz);
+    vTangent2 = tangent2;
     vUv = uv;
 }
         </script>
@@ -131,7 +131,6 @@ varying vec3 vNormal; // fragment normal in eye space
 varying vec4 vPosition; // fragment position in eye space
 varying vec3 vTangent;
 varying vec3 vTangent2;
-varying vec3 vNormal2;
 
 vec3 to_sRGB(vec3 c) { return pow(c, vec3(1.0/2.2)); }
 vec3 from_sRGB(vec3 c) { return pow(c, vec3(2.2)); }
@@ -141,7 +140,7 @@ void main() {
     // See phong.html for reference
 
     vec3 diffuseReflectance = hasTexture ? from_sRGB(texture2D(diffuseTexture, vUv).rgb) : diffuseColor;
-    vec3 normalMap = hasTexture ? from_sRGB(texture2D(normalMap, vUv).rgb) : diffuseColor;
+    vec3 normalMap = from_sRGB(texture2D(normalMap, vUv).rgb);
     vec3 finalColor = ambientIntensity * diffuseReflectance;
 
     vec3 tangent_sum = vTangent * (normalMap.r - 0.5) * bumpiness;
