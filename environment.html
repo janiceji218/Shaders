@@ -66,10 +66,19 @@
 // attribute vec2 uv;
 
 // TODO#A6: Declare any varyings here.
+varying vec2 vUv;
+varying vec3 vNormal; // normal at the vertex in eye space
+varying vec4 vPosition; // vertex position in eye space
 
 void main() {
     // TODO#A6: Compute gl_Position, as well as any varyings you need in the fragment shader.
-    gl_Position = vec4(1.0); // placeholder
+    vPosition = modelViewMatrix * vec4(position, 1.0);
+    // Calculate projected point
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+
+    // We have to use the inverse transpose of the modelview matrix for the normal
+    vNormal = normalize((normalMatrix * normal).xyz);
+    vUv = uv;
 }
         </script>
 <!-----------------------------------------------------------------------------
