@@ -140,7 +140,7 @@ void main() {
     // See phong.html for reference
 
     vec3 diffuseReflectance = hasTexture ? from_sRGB(texture2D(diffuseTexture, vUv).rgb) : diffuseColor;
-    vec3 normalMap = from_sRGB(texture2D(normalMap, vUv).rgb);
+    vec3 normalMap = texture2D(normalMap, vUv).rgb;
     vec3 finalColor = ambientIntensity * diffuseReflectance;
 
     vec3 tangent_sum = vTangent * (normalMap.r - 0.5) * bumpiness;
