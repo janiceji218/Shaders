@@ -219,10 +219,8 @@ void main() {
         float G = ufacetG(N, H, L, V);
         float D = ufacetD(N, H);
         float Fr = F * G * D / (4.0 * abs(dot(L, N)) * abs(dot(V, N)));
-        // float Fr = F * G * D / (4 * ((dot(L, N)) / normalize(dot(L, N))) * ((dot(V, N)) / normalize(dot(Vs, N))));
         // calculate specular term
         vec3 Ispec = vec3(1.0) * Fr * max(dot(N, L), 0.0);
-
         finalColor += lightColors[i] * (Idiff + Ispec) / (r*r);
     }
 
